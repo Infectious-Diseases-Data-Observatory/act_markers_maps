@@ -19,10 +19,10 @@ pwd
 cd ../
 
 markers=(
-  # mdr86
-  # mdr184
-  # mdr1246
-  # crt76
+  mdr86
+  mdr184
+  mdr1246
+  crt76
   k13_marcse
   k13snp_R561H
   k13snp_R622I

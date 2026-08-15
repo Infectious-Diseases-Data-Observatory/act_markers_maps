@@ -38,13 +38,10 @@ fit_binom <- function(mut_data,
                      out_dir,
                      fold = NULL, # numeric !
                      folds = NULL,
-                     lfo = FALSE, # flag for leave-future-out CV
                      warmup = 100, 
                      nsamples = 100, 
                      nchains = 6,
                      buffer = 0){
-  
-  
   
   message(nrow(mut_data))
   
@@ -183,11 +180,12 @@ fit_betabinom <- function(mut_data,
                       out_dir,
                       fold = NULL,
                       folds = NULL,
+                      lfo = FALSE, # flag for leave-future-out CV
                       warmup = 100, 
                       nsamples = 100, 
                       nchains = 6,
                       buffer = 0){
-                        
+
   message("here!")
   
   if(!is.null(fold)){

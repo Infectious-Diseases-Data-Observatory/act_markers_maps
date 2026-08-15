@@ -26,7 +26,7 @@ out_dir <- paste0("output/", marker, "/", mod, "/")
 
 # bring in all of the other outputs here too
 mut_data <- read_rds(paste0(out_dir, "mut_data.rds"))
-folds <- read_rds(paste0(out_dir, "cv_folds.rds"))
+folds <- read_rds(paste0(out_dir, "cv_folds_spat.rds"))
 train_dat <- mut_data[unlist(folds[-c(fold)]),]
 test_dat <- mut_data[unlist(folds[fold]),]
 

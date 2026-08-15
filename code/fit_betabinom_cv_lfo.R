@@ -61,7 +61,7 @@ write_rds(folds, paste0("output/", out_dir, "cv_folds_lfo.rds"))
 #                 nsamples = 30000)
 # }, mc.cores = NFOLD))
 
-system.time(lapply(1:NFOLD, function(x){
+system.time(mclapply(1:NFOLD, function(x){
   fit_betabinom(mut_data = mut_data,
                 covariates = covariates,
                 pfpr_years = pfpr_years,
