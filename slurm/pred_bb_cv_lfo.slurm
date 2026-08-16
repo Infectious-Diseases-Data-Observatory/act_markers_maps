@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=concat
+#SBATCH --job-name=pre_bb_cv
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
-#SBATCH --time=1:00:00           # Max runtime (HH:MM:SS)
-#SBATCH --mem=5G                  # Memory per node
-#SBATCH --array=0-99                 # should be up to nmarkers*nfolds
-#SBATCH --cpus-per-task=1         # Number of CPU cores per task
+#SBATCH --time=3:00:00           # Max runtime (HH:MM:SS)
+#SBATCH --mem=60G                  # Memory per node
+#SBATCH --array=0-49                 # should be up to nmarkers*nfolds
+#SBATCH --cpus-per-task=20         # Number of CPU cores per task
 
 #SBATCH --mail-type=BEGIN,END,FAIL  # Send email when job begins, ends, or fails
 #SBATCH --mail-user=lucy.harrison@wwarn.org  # Replace with your email address
@@ -44,17 +44,19 @@ marker=${markers[idx / nfolds]}
 
 echo $idx $marker $fold
 
-concat_preds() {
+make_preds() {
     local MARKER=$1
     local MODEL=$2
     local FOLD=$3
     
     echo "Running task for marker: $MARKER, model: $MODEL, fold: $FOLD"
 
-    Rscript code/concat_outputs_cv_slurm.R $MARKER $MODEL $FOLD
+    # Run the R script with the parameters
+    Rscript code/pred_slurm_cv_lfo.R $MARKER $MODEL $FOLD
+
 }
 
-concat_preds "$marker" "bb_gne" "$fold"
+make_preds "$marker" "bb_gne/lfo" "$fold"
 
 
 echo "Job done! ${SLURM_ARRAY_TASK_ID}"

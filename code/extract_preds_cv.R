@@ -10,7 +10,7 @@ mod <- args[2]
 message(paste0("Marker: ", marker))
 message(paste0("Model: ", mod))
 
-folds <- read_rds(paste0("output/", marker, "/", mod, "/cv_folds.rds"))
+folds <- read_rds(paste0("output/", marker, "/", mod, "/cv_folds_spat.rds"))
 
 dat <- extract_preds_cv(data_path = data_path_lookup[[marker]],
                  pred_path = paste0("output/", marker, "/", mod, "/cv_preds/"),

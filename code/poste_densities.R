@@ -1,6 +1,7 @@
 # library(bayesplot)
 # draws <- read_rds("output/k13snp_C469Y/bb_gne/draws.rds")
 # mcmc_hist(draws)
+library(cowplot)
 
 kelch_pal <- c("#14B1E7", viridis(5))
 partner_pal <- c("#c7047c", "#7ECE7E", "#174D97", "#E37210")
@@ -39,14 +40,16 @@ alldraws <- lapply(names(nice_name_lookup_all), function(marker){
   pivot_longer(cols = -c(marker), names_to = "var", values_to = "val") %>%
   mutate(marker = factor(marker, levels = nice_name_lookup_all))
 
-priors <- list(gneiting_len = sort(rnorm(3000, sd = 3)),
-               gneiting_tim = sort(rnorm(3000, sd = 3)),
-               gneiting_sd = sort(rnorm(3000, sd = 3)),
-               white_sd = sort(rnorm(3000, sd = 3)),
-               rho = rlnorm(3000),
-               `beta[1,1]` = rnorm(3000),
-               `beta[2,1]` = rnorm(3000),  
-               `beta[3,1]` = rnorm(3000)) %>%
+set.seed(13517)
+
+priors <- list(gneiting_len = sort(rnorm(4000, sd = 3)),
+               gneiting_tim = sort(rnorm(4000, sd = 3)),
+               gneiting_sd = sort(rnorm(4000, sd = 3)),
+               white_sd = sort(rnorm(4000, sd = 3)),
+               rho = rlnorm(4000),
+               `beta[1,1]` = rnorm(4000),
+               `beta[2,1]` = rnorm(4000),  
+               `beta[3,1]` = rnorm(4000)) %>%
   do.call(what = bind_cols) %>%
   # sort out truncated normals jankily
   mutate(across(gneiting_len:white_sd, ~ ifelse(.x >= 0, .x, NA))) %>%
@@ -68,6 +71,39 @@ nrow(priors)
 library(ggh4x)
 
 # Define individual limits for specific facet values
+
+by_panel_x <- list(
+  scale_x_continuous(limits = c(-1.5, 1.5)),
+  scale_x_continuous(limits = c(-2, 4)),
+  scale_x_continuous(limits = c(-4, 4)),
+  scale_x_continuous(limits = c(0, 10)),
+  scale_x_continuous(limits = c(0, 1.75)),
+  scale_x_continuous(limits = c(0, 0.4)),
+  scale_x_continuous(limits = c(0, 7)),
+  scale_x_continuous(limits = c(0, 3.5))
+)
+
+p1 <- ggplot(data = alldraws %>% 
+         filter(str_detect(marker, "Kelch"))) +
+  geom_density(aes(x = val, col = marker), key_glyph = draw_key_path) +
+  geom_density(data = priors, aes(x = val, linetype = prio), 
+               key_glyph = draw_key_path) +
+  facet_wrap(~ var, scales = "free") +
+  scale_colour_manual(values = kelch_pal, "Kelch 13 markers") +
+  scale_linetype_manual("", values = "dashed", guide = "none") +
+  xlab("Parameter value") +
+  ylab("Density") +
+  facetted_pos_scales(
+    x = by_panel_x
+  ) +
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.85, 0.05),
+        legend.spacing.y = unit(-0.75, "cm"),
+        legend.background = element_rect(fill = NA),
+        plot.margin = margin(1, 1, 40, 1))
+
+p1
+
 by_panel_x <- list(
   scale_x_continuous(limits = c(-1, 1)),
   scale_x_continuous(limits = c(-2, 2)),
@@ -82,10 +118,11 @@ by_panel_x <- list(
 
 # i would like to overlay posterior samples from multiple draws
 # objects and prior samples
-p1 <- ggplot(data = alldraws %>% 
-         filter(marker %in% nice_name_lookup_main)) + # doesn't include aggregate
+p2 <- ggplot(data = alldraws %>% 
+               filter(marker %in% nice_name_lookup_main)) + # doesn't include aggregate
   geom_density(aes(x = val, col = marker), key_glyph = draw_key_path) +
-  geom_density(data = priors, aes(x = val, linetype = prio), key_glyph = draw_key_path) +
+  geom_density(data = priors, aes(x = val, linetype = prio), 
+               key_glyph = draw_key_path) +
   facet_wrap(~ var, scales = "free") +
   scale_color_manual(values = partner_pal, "Partner drug markers") +
   xlab("Parameter value") +
@@ -93,37 +130,19 @@ p1 <- ggplot(data = alldraws %>%
   scale_linetype_manual("", values = "dashed") +
   facetted_pos_scales(
     x = by_panel_x
-  )
-
-p1
-
-by_panel_x <- list(
-  scale_x_continuous(limits = c(-1.5, 1.5)),
-  scale_x_continuous(limits = c(-2, 4)),
-  scale_x_continuous(limits = c(-4, 4)),
-  scale_x_continuous(limits = c(0, 10)),
-  scale_x_continuous(limits = c(0, 1.75)),
-  scale_x_continuous(limits = c(0, 0.4)),
-  scale_x_continuous(limits = c(0, 7)),
-  scale_x_continuous(limits = c(0, 3.5))
-)
-
-p2 <- ggplot(data = alldraws %>% 
-         filter(str_detect(marker, "Kelch"))) +
-  geom_density(aes(x = val, col = marker), key_glyph = draw_key_path) +
-  geom_density(data = priors, aes(x = val, linetype = prio), 
-               key_glyph = draw_key_path) +
-  facet_wrap(~ var, scales = "free") +
-  scale_colour_manual(values = kelch_pal, "Kelch 13 markers") +
-  scale_linetype_manual("", values = "dashed") +
-  xlab("Parameter value") +
-  ylab("Density") +
-  facetted_pos_scales(
-    x = by_panel_x
-  )
+  ) +
+  theme(legend.position = "inside",
+        legend.position.inside = c(0.85, 0.05),
+        legend.spacing.y = unit(-0.5, "cm"),
+        legend.background = element_rect(fill = NA),
+        plot.margin = margin(1, 1, 30, 1)) +
+  guides(colour = guide_legend(order = 1), 
+           linetype = guide_legend(order = 2))
 
 p2
 
-ggsave("figures/posterior_densities.png")
+p <- plot_grid(p1, p2, ncol = 1, align = "v")
+
+ggsave("figures/posterior_densities.png", p, height = 10, width = 6.5)
 
 

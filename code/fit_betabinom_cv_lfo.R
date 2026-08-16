@@ -39,12 +39,12 @@ NFOLD <- 10
 
 
 # separate out folds by time
-folds <- lapply(1:NFOLD, function(x){
-  cutoff <- max(mut_data$year) - NFOLD + x
+folds <- lapply(1: (NFOLD + 1), function(x){
+  cutoff <- max(mut_data$year) - NFOLD + x - 1
   which(mut_data$year <= cutoff)
 })
 
-names(folds) <- paste0("Fold", 1:NFOLD)
+names(folds) <- paste0("Fold", 1: (NFOLD + 1))
 
 write_rds(folds, paste0("output/", out_dir, "cv_folds_lfo.rds"))
 
@@ -72,5 +72,5 @@ system.time(mclapply(1:NFOLD, function(x){
                 nchains = 6,
                 warmup = 5000,
                 nsamples = 30000)
-}))
+}, mc.cores = NFOLD))
 

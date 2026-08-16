@@ -2,37 +2,33 @@ source("code/setup.R")
 source("code/build_design_matrix.R")
 source("code/predict_to_raster.R")
 
-# for prediction raster:
-AGG_FACTOR = 5
+AGG_FACTOR <- 5
 
 # this feels a bit unflashy but I can't keep having separate scripts
 args <- commandArgs(trailingOnly = TRUE)
 marker <- args[1]
 mod <- args[2]
-year <- as.numeric(args[3])
-fold <- as.numeric(args[4])
+fold <- as.numeric(args[3])
 message(paste0("Marker: ", marker))
 message(paste0("Model: ", mod))
-message(paste0("Year: ", year))
 message(paste0("Fold: ", fold))
 
 # set this to the location where all the inference outputs are at:
 # out_dir <- "output/mdr86/gneiting_sparse/"
 out_dir <- paste0("output/", marker, "/", mod, "/")
-
-# message(pfpr_years)
-# scaled_years <- scale_years(range(pfpr_years))
-# message(scale_years)
+message(out_dir)
 
 # bring in all of the other outputs here too
 mut_data <- read_rds(paste0(out_dir, "mut_data.rds"))
 
-folds <- read_rds(paste0(out_dir, "cv_folds_spat.rds"))
-train_dat <- mut_data[unlist(folds[-c(fold)]),]
-test_dat <- mut_data[unlist(folds[fold]),]
+# year to make predictions to
+year <- max(mut_data$year) - NFOLD + fold
 
+folds <- read_rds(paste0(out_dir, "cv_folds_lfo.rds"))
+train_dat <- mut_data[unlist(folds[fold]),]
+test_dat <- mut_data[setdiff(unlist(folds[fold + 1]), unlist(folds[fold])),]
 
-
+message(year)
 message(nrow(train_dat))
 message(names(train_dat))
 
@@ -67,9 +63,9 @@ preds <- predict_to_ras(covariates,
 
 # perhaps give me a quick plot here?
 
-writeRaster(preds$out, paste0(out_dir, "cv_preds/", year, "_preds_", fold, ".grd"), overwrite = TRUE)
+writeRaster(preds$out, paste0(out_dir, year, "_preds_", fold, ".grd"), overwrite = TRUE)
 if(!is.null(preds$coverages)){
-  write.csv(preds$coverages, paste0(out_dir, "cv_preds/", year, "_coverages_", fold, ".csv"), row.names = FALSE)
+  write.csv(preds$coverages, paste0(out_dir, year, "_coverages_", fold, ".csv"), row.names = FALSE)
 }
 
 message(paste0("written to ", out_dir))
