@@ -4,7 +4,6 @@ extract_pfpr <- function(df,
                           max_year = 2024,
                           buffer = 0){
   # it's time to throw in the towel chatty g can do this way better than me
-  
   yrs_covs <- str_extract(names(covs), "\\d{4}")
   
   # get predictions for each row in `mut_data`
@@ -67,7 +66,9 @@ response_plots_runup <- function(ras){
 #' @export
 #'
 #' @examples
-response_plot <- function(df, dat = NULL, covar = "pfpr", xax_breaks = 100){
+response_plot <- function(df, dat = NULL, covar = "pfpr", xax_breaks = 100,
+                          pred_pal = iddoPal::iddo_palettes$soft_blues,
+                          title = ""){
   # summarise distribution of all median preds against all covar vals
   # for each value in pfpr, find median and 95% quantile
   # might be more convenient to grab from prediction design matrix ..
@@ -84,46 +85,47 @@ response_plot <- function(df, dat = NULL, covar = "pfpr", xax_breaks = 100){
               upper2.5 = quantile(pred, probs = c(0.975)),
               min = min(pred),
               max = max(pred)) %>%
-    mutate(xnume = xax_bins[2:xax_breaks])
+    mutate(xnume = xax_bins[1:xax_breaks])
   
   p <- ggplot(data = to_plot) +
-    geom_line(aes(x = xnume, y = med)) +
     # geom_line(aes(x = xnume, y = min)) +
     # geom_line(aes(x = xnume, y = max)) +
-    geom_ribbon(aes(ymin = lower2.5, ymax = upper2.5, x = xnume),
-                alpha = 0.2) +
-    geom_ribbon(aes(ymin = lower25, ymax = upper25, x = xnume),
-                alpha = 0.2) +
-    xlab("PFPR (unscaled)") +
-    ylab("Median predicted prevalence")
+    geom_ribbon(aes(ymin = lower2.5, ymax = upper2.5, x = xnume, 
+                    fill = "2.5% - 97.5%"),
+                alpha = 0.5) +
+    geom_ribbon(aes(ymin = lower25, ymax = upper25, x = xnume, 
+                    fill = "25% - 75%"),
+                alpha = 0.5) +
+    geom_ribbon(aes(x = xnume, ymin = med, ymax = med, fill = "50%")) +
+    geom_line(aes(x = xnume, y = med), col = pred_pal[1], linewidth = 1) +
+    scale_fill_manual("", values = c("2.5% - 97.5%" = pred_pal[6],
+                                     "25% - 75%" = pred_pal[4], 
+                                     "50%" = pred_pal[1])) +
+    xlab("PfPR") +
+    ylab("Prevalence") +
+    labs(title = title)
 
   if (!is.null(dat)){
-    # p + geom_point(aes(x = pfpr, y = pred), data = dat)
+    
+    dat_summary <- dat %>%
+      mutate(xbinned = cut(dat[, covar] %>% unlist, breaks = xax_bins)) %>%
+      group_by(xbinned) %>%
+      summarise(med = median(present/tested)) %>%
+      mutate(xnume = xax_bins[1:nrow(.)])
+    
+     # p + geom_point(aes(x = pfpr, y = pred, size = tested), 
+     #                data = dat, alpha = 0.6, pch = 1) +
     p + geom_point(aes(x = pfpr, y = present/tested, size = tested), data = dat,
-                   alpha = 0.6, pch = 1) +
-      scale_size_continuous(trans = "sqrt", breaks = c(10, 100, 1000, 3000))
+                  pch = 1, color = "grey") +
+      # killing this as it looks silly
+      # geom_line(aes(x = xnume, y = med), data = dat_summary) +
+      scale_size_continuous(name = "Sample size", trans = "sqrt", 
+                            range = c(0.2, 5), limits = c(5, 5200), breaks = c(10, 100, 1000, 5000))
+      #scale_size_continuous(trans = "sqrt", breaks = c(10, 100, 1000, 3000), "Sample size")
   }
 
 }
 
-response_plot(df = response_plot_runup,
-              dat = mut_dat_assoc_with_preds$k13_marcse)
-
-ggplot(data = response_plot_runup) +
-  geom_density(aes(x = pfpr))
-
-#' Spatial/temporal variogram
-#' How does a prediction at one location relate to a prediction at another location ?
-#'
-#' @param preds 
-#'
-#' @returns
-#' @export
-#'
-#' @examples
-variogram <- function(preds){
-  
-}
 
 library(terra)
 
@@ -144,10 +146,31 @@ mut_dat_assoc_with_preds <- lapply(names(nice_name_lookup_all), function(marker)
   setNames(names(nice_name_lookup_all)) %>%
   suppressMessages()
 
-preds <- rast("output/k13_marcse/bb_gne/preds_medians.tif")
-ras <- c(preds, covariates)
-response_plot_runup <- response_plots_runup(ras)
+titlelst <- list(k13_marcse = "(a) Kelch 13", 
+                 crt76 = "(b) Pfcrt K76T", 
+                 mdr86 = "(c) Pfmdr1 N86Y", 
+                 mdr184 = "(d) Pfmdr1 Y184F", 
+                 mdr1246 = "(e) Pfmdr1 D1246Y")
 
+plotlst <- lapply(names(nice_name_lookup_main), function(marker){
+  # preds <- rast(paste0("output/", marker,"/bb_gne/preds_medians.tif"))
+  # ras <- c(preds, covariates) %>%
+  #   aggregate(fact = 5) # let's just make this a little more manageable
+  # response_plot_runup <- response_plots_runup(ras)
+  # write.csv(response_plot_runup,
+  #           paste0("output/response_plot_meta/", marker, "_runup.csv"),
+  #             row.names = FALSE)
+  
+  response_plot_runup <- read.csv(paste0("output/response_plot_meta/", marker, "_runup.csv"))
+  response_plot(df = response_plot_runup,
+                dat = mut_dat_assoc_with_preds[[marker]],
+                xax_breaks = 100,
+                title = titlelst[[marker]])
+})
+
+plotlst[[1]] + plotlst[[2]] + plotlst[[3]] + plotlst[[4]] + plotlst[[5]] +
+  plot_layout(ncol = 1, guides = "collect", axis_title = "collect")
+ggsave("figures/response_pfpr.png", scale = 1.5, height = 7, width = 6)
 
 
 

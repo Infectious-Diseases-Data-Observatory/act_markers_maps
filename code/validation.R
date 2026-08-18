@@ -1,7 +1,7 @@
 # script for validation outputs
 
-# for nearest neighbour index - from Foo and Flegg
-library(tensorflow)
+# # for nearest neighbour index - from Foo and Flegg
+# library(tensorflow)
 source("code/setup.R")
 source("code/build_design_matrix.R") # for year scaling
 
@@ -38,7 +38,7 @@ mut_dat_assoc_with_preds_cv <- lapply(names(nice_name_lookup_all), function(mark
   setNames(names(nice_name_lookup_all))
 
 cv_folds <- lapply(names(nice_name_lookup_all), function(marker){
-  read_rds(paste0("output/", marker, "/bb_gne/cv_folds.rds"))
+  read_rds(paste0("output/", marker, "/bb_gne/cv_folds_spat.rds"))
 }) %>%
   setNames(names(nice_name_lookup_all))
 
@@ -53,6 +53,8 @@ mut_dat_preds_baseline <- lapply(names(nice_name_lookup_all), function(marker){
 # summarise
 rmses <- lapply(mut_dat_assoc_with_preds, function(x){rmse(x)})
 rsq <- lapply(mut_dat_assoc_with_preds, function(x){unadjusted_rsq(x)})
+
+# crack into rsqs for held-out models and add n folds included in mean
 cv_stats <- lapply(names(nice_name_lookup_all), 
                    function(x){cv_val(mut_dat_assoc_with_preds_cv[[x]], 
                                       cv_folds[[x]])}) %>%
@@ -81,13 +83,13 @@ dat <- data.frame(mod = unlist(nice_name_lookup_all[names(rmses)]),
   arrange(ord) %>%
   dplyr::select(-c(marker, ord))
 
-colnames(dat) <- c("", "RMSE", "$r^2$", "RMSE", "$r^2$", "Mean", "SD", "Mean", "SD")
+colnames(dat) <- c("", "RMSE", "$r^2$", "RMSE", "$r^2$", "Mean", "SD", "Mean", "SD", "n")
 tab <- xtable(dat, digits = 3)
-align(tab) <- c(rep("c", 2), "|", rep("c", 2), "|", rep("c", 2), "|", rep("c", 4))
+align(tab) <- c(rep("c", 2), "|", rep("c", 2), "|", rep("c", 2), "|", rep("c", 5))
 addtorow <- list()
 addtorow$pos <- list(-1, -1, -1)
 addtorow$command <- c("\\hline & \\multicolumn{2}{c|}{Baseline} & \\multicolumn{6}{c}{Spatiotemporal GP} \\\\\n \\cline{4-9}",
-                      " & & & \\multicolumn{2}{c|}{Full dataset} & \\multicolumn{4}{c}{10-fold holdout} \\\\\n", # \\cline{6-9}
+                      " & & & \\multicolumn{2}{c|}{Full dataset} & \\multicolumn{5}{c}{10-fold holdout} \\\\\n", # \\cline{6-9}
                       "& & & & & \\multicolumn{2}{c}{RMSE} & \\multicolumn{2}{c}{$r^2$} \\\\\n")
 print(tab, 
       sanitize.text.function=function(x){x}, 
@@ -97,6 +99,30 @@ print(tab,
       add.to.row = addtorow,
       NA.string = "*")
 
+################################################################################
+# check distribution of observed prevalences and how that varies through blocks ..
+
+
+pal <- c("#14B1E7", "#440154FF", "#135ced", "#5DC863FF", "#FDE725FF", "#c7047c", 
+  "#E37210","#f2bbee", "#9d13ed", "#13edde")
+
+ggplot(data = mut_dat_assoc_with_preds_cv$k13_marcse %>%
+         mutate(fold = as.factor(fold))) +
+  geom_sf(data = afr) +
+  geom_point(aes(x = x, y = y, col = fold)) +
+  scale_color_discrete("Fold") +
+  theme(axis.title = element_blank())
+ggsave("figures/blocks_eg.png", height = 7, width = 7)
+
+ggplot(data = mut_dat_assoc_with_preds_cv$k13snp_A675V %>%
+         mutate(fold = as.factor(fold))) +
+  geom_histogram(aes(fill = fold, x = present/tested)) +
+  facet_wrap(~fold, ncol = 1, scales = "free_y") +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank()) +
+  scale_y_continuous(trans = "log")
+
+# I could do this for all of the models ... but that might be too much
 
 ################################################################################
 # plots of residuals

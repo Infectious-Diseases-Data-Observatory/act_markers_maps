@@ -50,33 +50,15 @@ folds <- cv_spatial(
 )
 
 # for supp?:
-# mut_data_sf$folds <- folds$folds_ids
+mut_data_sf$folds <- as.factor(folds$folds_ids)
 
-# p <- ggplot() +
-#   geom_sf(data = afr, fill = NA) +
-#   geom_sf(data = folds$blocks) +
-#   geom_sf(data = mut_data_sf, pch = 1) +
-#   facet_wrap(~folds)
+p <- ggplot() +
+  geom_sf(data = afr, fill = NA) +
+  geom_sf(data = folds$blocks, alpha = 0.5) +
+  geom_sf(data = mut_data_sf, aes(col = folds)) +
+  scale_color_discrete("Fold") +
+  theme(axis.title = element_blank())
 
-# ggsave(p, paste("figures/spat_folds_", marker, ".png"))
+ggsave(p, paste("figures/blocks_eg.png"))
 
-# write in same format as caret::createFolds
-folds <- lapply(folds$folds_list, function(x){
-  x[[2]]
-})
-
-names(folds) <- paste0("Fold", 1:NFOLD)
-
-write_rds(folds, paste0("output/", out_dir, "cv_folds_spat.rds"))
-
-system.time(mclapply(1:NFOLD, function(x){
-  fit_betabinom(mut_data = mut_data,
-                covariates = covariates,
-                pfpr_years = pfpr_years,
-                out_dir = out_dir,
-                fold = x,
-                folds = folds,
-                nchains = 6,
-                warmup = 5000,
-                nsamples = 30000)
-}, mc.cores = NFOLD))
+be

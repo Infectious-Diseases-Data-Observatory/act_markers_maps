@@ -20,6 +20,7 @@ parameter_lookup <- list("gneiting_len" = "Lengthscale",
                          "beta[3,1]" = "Beta: PfPR",
                          "rho" = "Rho")
 
+# how did I work this out ?????
 chains_to_exclude <- list("k13_marcse" = 3) # this particular chain was a bit dodgy
 
 
@@ -56,7 +57,7 @@ priors <- list(gneiting_len = sort(rnorm(4000, sd = 3)),
   drop_na() %>%
   rename_with(~ unlist(parameter_lookup), all_of(names(parameter_lookup))) %>%
   pivot_longer(everything(), values_to = "val", names_to = "var") %>%
-  mutate(prio = "Prior")
+  mutate(prio = "Priors")
 
 nrow(priors)
 
@@ -97,10 +98,12 @@ p1 <- ggplot(data = alldraws %>%
     x = by_panel_x
   ) +
   theme(legend.position = "inside",
-        legend.position.inside = c(0.85, 0.05),
+        legend.position.inside = c(0.85, 0.07),
         legend.spacing.y = unit(-0.75, "cm"),
         legend.background = element_rect(fill = NA),
-        plot.margin = margin(1, 1, 40, 1))
+        plot.margin = margin(1, 1, 25, 1),
+        axis.title=element_text(size=10),
+        legend.title=element_text(size=10))
 
 p1
 
@@ -132,10 +135,12 @@ p2 <- ggplot(data = alldraws %>%
     x = by_panel_x
   ) +
   theme(legend.position = "inside",
-        legend.position.inside = c(0.85, 0.05),
+        legend.position.inside = c(0.85, 0.07),
         legend.spacing.y = unit(-0.5, "cm"),
         legend.background = element_rect(fill = NA),
-        plot.margin = margin(1, 1, 30, 1)) +
+        plot.margin = margin(1, 1, 25, 1),
+        axis.title=element_text(size=10),
+        legend.title=element_text(size=10)) +
   guides(colour = guide_legend(order = 1), 
            linetype = guide_legend(order = 2))
 
@@ -143,6 +148,6 @@ p2
 
 p <- plot_grid(p1, p2, ncol = 1, align = "v")
 
-ggsave("figures/posterior_densities.png", p, height = 10, width = 6.5)
+ggsave("figures/posterior_densities.png", p, height = 10, width = 7.5)
 
 
