@@ -312,17 +312,17 @@ bg <- moldm %>%
   summarise(Tested = sum(Tested))
 
 # markers to show in top panel
-markers_panel_a <- markers %>%
-  ungroup() %>%
-  group_by(marker) %>%
-  summarise(maxp = max(present), sump = sum(present)) %>%
-  filter(maxp > 5) %>%
-  arrange(desc(sump)) %>%
-  ungroup() %>%
-  # need this for legend ordering ...
-  mutate(marker = factor(marker, levels = marker)) %>%
-  dplyr::select(marker) %>%
-  unique()
+# markers_panel_a <- markers %>%
+#   ungroup() %>%
+#   group_by(marker) %>%
+#   summarise(maxp = max(present), sump = sum(present)) %>%
+#   filter(maxp > 100) %>%
+#   arrange(desc(sump)) %>%
+#   ungroup() %>%
+#   # need this for legend ordering ...
+#   mutate(marker = factor(marker, levels = marker)) %>%
+#   dplyr::select(marker) %>%
+#   unique()
 
 # markers to show in bottom set of panels
 markers_panel_b <- markers %>% 
@@ -333,16 +333,22 @@ markers_panel_b <- markers %>%
   dplyr::slice(1:5) %>%
   bind_rows(data.frame(marker = "Others", n=1))
 
-npal = 7
-sty <- markers_panel_a %>%
-  mutate(col = factor(rep(1:npal, 5)[1:length(marker)]),
-         linet = factor(rep(c(1:2), each = npal)[1:length(marker)]))
+npal = 6
+# sty <- markers_panel_b %>%
+#   mutate(col = factor(rep(1:npal, 5)[1:length(marker)]),
+#          linet = factor(rep(c(1:2), each = npal)[1:length(marker)]))
 
 df <- markers %>%
-  filter(marker %in% markers_panel_a$marker) %>%
-  mutate(marker = factor(marker, levels = markers_panel_a$marker)) %>%
-  left_join(sty, join_by(marker==marker)) %>%
-  mutate(group = interaction(col, linet, sep = " / ")) %>%
+  ungroup() %>%
+  # filter(marker %in% markers_panel_a$marker) %>%
+  # mutate(marker = factor(marker, levels = markers_panel_a$marker)) %>%
+  mutate(marker = ifelse(marker %in% markers_panel_b$marker,
+                         marker,
+                         "Others"),
+         marker = factor(marker, levels = markers_panel_b$marker)) %>%
+  summarise(.by = c(year, marker), present = sum(present)) %>%
+  # left_join(sty, join_by(marker==marker)) %>%
+  # mutate(group = interaction(col, linet, sep = " / ")) %>%
   filter(year > 2006)
 
 # chop off <2010? fix colour palette some more?
@@ -394,29 +400,62 @@ iddoblue <- iddoPal::iddo_palettes$iddo[1]
 bg <- bg %>%
   filter(year >= 2005)
 
-bg_scale <- 50
+bg_scale <- 25
 bg_col <- "grey65"
 
 message("Caution: setting bg_scale and y limits manually")
+# p1 <- 
+#   ggplot() +
+#   geom_bar(data = bg, 
+#            aes(x = year, y = Tested / bg_scale), 
+#            stat = "identity", fill = "grey75") +
+#   geom_line(data = df, linewidth = 0.7,
+#             aes(x = year, y = present, group = marker, color = marker, 
+#                 linetype = marker)) +
+#   geom_point(data = df, 
+#              aes(x = year, y = present, group = marker, color = marker)) +
+#   labs(
+#     title = "(a) Detected mutations by year",
+#     color = "Marker",
+#     linetype = "Marker"
+#   ) +
+#   scale_color_manual(values = rep(c(iddoblue, "#c7047c", viridis(4), "#E37210"), 2)) +
+#   scale_linetype_manual(values = rep(1:2, each = 7)) +
+#   scale_y_continuous(sec.axis = sec_axis(~.*bg_scale, name="Number of tests"),
+#                      limits = c(0, 515)) +
+#   theme_minimal() +
+#   xlab("Year") +
+#   ylab("Mutations detected") +
+#   theme_bw() +
+#   theme(axis.text = element_text(size = 10),
+#         legend.text = element_text(size = 10),
+#         legend.key.spacing.y = unit(-0.3, "lines"),
+#         legend.box.margin = margin(50, 6, 6, 6),
+#         axis.text.y.right = element_text(color = bg_col),
+#         axis.title.y.right = element_text(color = bg_col),
+#         axis.ticks.y.right = element_line(color = bg_col)) +
+#   #legend.justification.right = "bottom") +
+#   scale_x_continuous(breaks = 2008:2025, limits = c(2008, 2025)) 
+# p1
+
 p1 <- 
   ggplot() +
   geom_bar(data = bg, 
            aes(x = year, y = Tested / bg_scale), 
            stat = "identity", fill = "grey75") +
-  geom_line(data = df, linewidth = 0.7,
-            aes(x = year, y = present, group = marker, color = marker, 
-                linetype = marker)) +
-  geom_point(data = df, 
-             aes(x = year, y = present, group = marker, color = marker)) +
+  # geom_line(data = df, linewidth = 0.7,
+  #           aes(x = year, y = present, group = marker, color = marker, 
+  #               linetype = marker)) +
+  geom_bar(data = df, aes(x = year, y = present, fill = marker), 
+           stat = "identity", width = 0.6) +
   labs(
     title = "(a) Detected mutations by year",
-    color = "Marker",
-    linetype = "Marker"
+    fill = "Marker",
   ) +
-  scale_color_manual(values = rep(c(iddoblue, "#c7047c", viridis(4), "#E37210"), 2)) +
-  scale_linetype_manual(values = rep(1:2, each = 7)) +
+  scale_fill_manual(values = rep(c(iddoblue, "#c7047c", viridis(4), "#E37210"), 2)) +
+  # scale_linetype_manual(values = rep(1:2, each = 7)) +
   scale_y_continuous(sec.axis = sec_axis(~.*bg_scale, name="Number of tests"),
-                     limits = c(0, 515)) +
+                     limits = c(0, 1200), breaks = seq(0, 1200, 200)) +
   theme_minimal() +
   xlab("Year") +
   ylab("Mutations detected") +
@@ -429,7 +468,7 @@ p1 <-
         axis.title.y.right = element_text(color = bg_col),
         axis.ticks.y.right = element_line(color = bg_col)) +
   #legend.justification.right = "bottom") +
-  scale_x_continuous(breaks = 2008:2025, limits = c(2008, 2025)) 
+  scale_x_continuous(breaks = 2008:2024, limits = c(2007.5, 2024.5))
 p1
 
 # what happened to 2008 testing?

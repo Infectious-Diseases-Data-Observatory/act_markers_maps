@@ -59,6 +59,4 @@ p <- ggplot() +
   scale_color_discrete("Fold") +
   theme(axis.title = element_blank())
 
-ggsave(p, paste("figures/blocks_eg.png"))
-
-be
+ggsave(paste("figures/blocks_eg.png"), p, height = 7, width = 7)
