@@ -3,6 +3,7 @@ source("code/build_design_matrix.R")
 source("code/predict_to_raster.R")
 
 AGG_FACTOR <- 5
+NFOLD <- 6
 
 # this feels a bit unflashy but I can't keep having separate scripts
 args <- commandArgs(trailingOnly = TRUE)
