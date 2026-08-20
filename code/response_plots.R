@@ -116,7 +116,7 @@ response_plot <- function(df, dat = NULL, covar = "pfpr", xax_breaks = 100,
      # p + geom_point(aes(x = pfpr, y = pred, size = tested), 
      #                data = dat, alpha = 0.6, pch = 1) +
     p + geom_point(aes(x = pfpr, y = present/tested, size = tested), data = dat,
-                  pch = 1, color = "grey") +
+                  pch = 1, color = "grey", alpha = 0.6) +
       # killing this as it looks silly
       # geom_line(aes(x = xnume, y = med), data = dat_summary) +
       scale_size_continuous(name = "Sample size", trans = "sqrt", 

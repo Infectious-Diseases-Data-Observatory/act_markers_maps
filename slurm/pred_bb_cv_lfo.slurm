@@ -1,10 +1,10 @@
 #!/bin/bash
-#SBATCH --job-name=pre_bb_cv
+#SBATCH --job-name=pre_bb_cv_lfo
 #SBATCH --output=logs/%x_%A_%a.out
 #SBATCH --error=logs/%x_%A_%a.err
 #SBATCH --time=3:00:00           # Max runtime (HH:MM:SS)
 #SBATCH --mem=60G                  # Memory per node
-#SBATCH --array=0-49                 # should be up to nmarkers*nfolds
+#SBATCH --array=0-29                 # should be up to nmarkers*nfolds
 #SBATCH --cpus-per-task=20         # Number of CPU cores per task
 
 #SBATCH --mail-type=BEGIN,END,FAIL  # Send email when job begins, ends, or fails
@@ -24,14 +24,14 @@ markers=(
   mdr1246
   crt76
   k13_marcse
-  k13snp_R561H
-  k13snp_R622I
-  k13snp_C469Y
-  k13snp_P441L
-  k13snp_A675V
+  # k13snp_R561H
+  # k13snp_R622I
+  # k13snp_C469Y
+  # k13snp_P441L
+  # k13snp_A675V
 )
 
-nfolds=10
+nfolds=6
 
 idx=$SLURM_ARRAY_TASK_ID
 

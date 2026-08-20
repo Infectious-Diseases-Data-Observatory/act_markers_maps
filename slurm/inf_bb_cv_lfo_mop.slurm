@@ -4,7 +4,7 @@
 #SBATCH --error=logs/%x_%A_%a.err
 #SBATCH --time=4:00:00           # Max runtime (HH:MM:SS)
 #SBATCH --mem=50000                  # Memory per node
-#SBATCH --array=0-3
+#SBATCH --array=0-2
 #SBATCH --cpus-per-task=30         # Number of CPU cores per task
 
 #SBATCH --mail-type=BEGIN,END,FAIL  # Send email when job begins, ends, or fails
@@ -23,12 +23,10 @@ pwd
 DATASETS=(
   mdr86
   mdr184
-  mdr1246
-  crt76
+  mdr184
 )
 
 SEEDS=(
-  124
   124
   124
   124
@@ -36,10 +34,9 @@ SEEDS=(
 
 # a number between 1 and 10
 FOLDS=(
+  6
   4
-  10
-  4
-  9
+  5
 )
 
 # Select dataset for this array task
