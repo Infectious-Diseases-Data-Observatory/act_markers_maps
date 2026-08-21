@@ -21,16 +21,16 @@ cd ../
 pwd
 
 # provide marker and model ...
-Rscript code/extract_preds_cv.R k13_marcse bb_gne
-Rscript code/extract_preds_cv.R mdr86 bb_gne
-Rscript code/extract_preds_cv.R mdr184 bb_gne
-Rscript code/extract_preds_cv.R mdr1246 bb_gne
-Rscript code/extract_preds_cv.R crt76 bb_gne
-Rscript code/extract_preds_cv.R k13snp_R561H bb_gne
-Rscript code/extract_preds_cv.R k13snp_R622I bb_gne
-Rscript code/extract_preds_cv.R k13snp_A675V bb_gne
-Rscript code/extract_preds_cv.R k13snp_P441L bb_gne
-Rscript code/extract_preds_cv.R k13snp_C469Y bb_gne
+Rscript code/extract_preds_cv.R k13_marcse bb_gne/lfo
+Rscript code/extract_preds_cv.R mdr86 bb_gne/lfo
+Rscript code/extract_preds_cv.R mdr184 bb_gne/lfo
+Rscript code/extract_preds_cv.R mdr1246 bb_gne/lfo
+Rscript code/extract_preds_cv.R crt76 bb_gne/lfo
+# Rscript code/extract_preds_cv.R k13snp_R561H bb_gne
+# Rscript code/extract_preds_cv.R k13snp_R622I bb_gne
+# Rscript code/extract_preds_cv.R k13snp_A675V bb_gne
+# Rscript code/extract_preds_cv.R k13snp_P441L bb_gne
+# Rscript code/extract_preds_cv.R k13snp_C469Y bb_gne
 
 
 

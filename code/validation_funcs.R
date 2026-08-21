@@ -43,29 +43,45 @@ extract_preds <- function(data_path,
 extract_preds_cv <- function(data_path,
                               pred_path,
                               folds,
+                              lfo = FALSE,
                               ave_tag = "_50", # vestigial at this point
                               in_buffer = 0,
                               out_buffer = 0 # integer for dragging points back to land
                               ){
   # grab predictions for all points in dataset on held-out models
-
-  folds <- lapply(1:length(folds), function(idx){
-    data.frame(fold = idx,
-               pts = folds[[idx]])
-  }) %>%
-    do.call(bind_rows, .) %>%
-    arrange(pts)
   
-  message(paste(unique(folds$fold)))
-  message(nrow(folds))
-  
-  # bring in coords associated with predictions + associate with fold
-  mut_data <- setup_mut_data(data_path, min_year = MIN_YEAR, buffer = in_buffer) # %>%
-    # mutate(fold = folds$fold)
+  # bring in coords associated with predictions
+  mut_data <- setup_mut_data(data_path, min_year = MIN_YEAR, buffer = in_buffer)
   
   message(nrow(mut_data))
+  if (lfo == TRUE){
+    # test sets are based on set differences
+    folds <- lapply(1: (length(folds) - 1), function(idx){
+      data.frame(fold = idx,
+                 pts = setdiff(folds[[idx + 1]], folds[[idx]])
+    }) %>%
+      do.call(bind_rows, .) %>%
+      arrange(pts)
+    
+    # not all points are in test set for LFO CV
+    mut_data <- mut_data[folds$pts,]
+
+  } else {
+    # response/spatially-stratified CV:
+    folds <- lapply(1:length(folds), function(idx){
+    data.frame(fold = idx,
+               pts = folds[[idx]])
+    }) %>%
+      do.call(bind_rows, .) %>%
+      arrange(pts)
+  }
+
+  message(nrow(mut_data))
+
   mut_data$fold = folds$fold
-  
+
+  message(paste(unique(folds$fold)))
+  message(nrow(folds))
   
   preds_avail <- list.files(pred_path)
   preds_avail <- preds_avail[grep("preds_medians", preds_avail)]

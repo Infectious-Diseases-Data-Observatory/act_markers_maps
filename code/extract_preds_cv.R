@@ -10,11 +10,23 @@ mod <- args[2]
 message(paste0("Marker: ", marker))
 message(paste0("Model: ", mod))
 
-folds <- read_rds(paste0("output/", marker, "/", mod, "/cv_folds_spat.rds"))
+
+if (!str_detect("lfo", mod)){
+    folds <- read_rds(paste0("output/", marker, "/", mod, "/cv_folds_spat.rds"))
+    pred_path = paste0("output/", marker, "/", mod, "/cv_preds/")
+    lfo  <- FALSE
+} else {
+    # mod includes "/lfo"
+    folds <- read_rds(paste0("output/", marker, "/", mod, "/cv_folds_lfo.rds"))
+    pred_path = paste0("output/", marker, "/", mod, "/")
+    lfo <- TRUE
+}
+
 
 dat <- extract_preds_cv(data_path = data_path_lookup[[marker]],
-                 pred_path = paste0("output/", marker, "/", mod, "/cv_preds/"),
+                 pred_path = pred_path,
                  folds = folds, 
+                 lfo = lfo,
                  in_buffer = BUFFER,
                  out_buffer = 50000) 
 # using large buffer as increased AGG_FACTOR for held-out models
