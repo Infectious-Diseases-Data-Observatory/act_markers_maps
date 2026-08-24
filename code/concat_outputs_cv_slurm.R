@@ -13,7 +13,11 @@ message(paste0("Fold: ", fold))
 
 # set this to the location where all the inference outputs are at:
 # out_dir <- "output/mdr86/gneiting_sparse/"
-out_dir <- paste0("output/", marker, "/", mod, "/cv_preds/")
+if (!str_detect(mod, "lfo")){   
+    out_dir <- paste0("output/", marker, "/", mod, "/cv_preds/")
+} else {
+    out_dir <- paste0("output/", marker, "/", mod)
+}
 
 concat_coverages(out_dir, fold)
 concat_preds(out_dir, 

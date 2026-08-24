@@ -58,7 +58,7 @@ extract_preds_cv <- function(data_path,
     # test sets are based on set differences
     folds <- lapply(1: (length(folds) - 1), function(idx){
       data.frame(fold = idx,
-                 pts = setdiff(folds[[idx + 1]], folds[[idx]])
+                 pts = setdiff(folds[[idx + 1]], folds[[idx]]))
     }) %>%
       do.call(bind_rows, .) %>%
       arrange(pts)
@@ -170,14 +170,16 @@ unadjusted_rsq <- function (dat){
   cor(dat$pred, dat$present/dat$tested) ^ 2
 }
 
-cv_val <- function(mut_data, folds){
+
+cv_val <- function(mut_data){
   # stats for k-fold CV
+  folds <- unique(mut_data$fold)
   out <- data.frame(matrix(NA, ncol = 2, nrow = length(folds)))
   names(out) <- c("rmse", "rsq")
   
   for (k in 1:length(folds)){
     
-    dat <- mut_data[folds[[k]],] # filter test records in fold
+    dat <- filter(mut_data, fold == k) # filter test records in fold
     out[k, ] <- c(rmse(dat), unadjusted_rsq(dat))
     
   }
@@ -189,6 +191,7 @@ cv_val <- function(mut_data, folds){
        rsq_sd = sd(out$rsq, na.rm = TRUE),
        n = ifelse(is.na(mean(out$rsq)), sum(!is.na(out$rsq)), ""))
 }
+
 
 baseline_preds <- function(mut_data){
   # for comparison
@@ -702,6 +705,26 @@ pit_ecdfs <- function(marker, new_samps = TRUE, nsim = 100){
 #   
 #   return(probs)
 # }
+
+
+###############################################################################
+# summarise LFO runs
+make_me_a_ribbon <- function(path){
+  preds <- rast(paste0(path, "preds_medians.tif"))
+  coords <- xyFromCell(preds, cells(preds))
+  vals <- terra::extract(preds, coords)
+  df <- cbind(coords, vals) %>%
+    pivot_longer(starts_with("2"),
+                 names_to = "lyr",
+                 values_to = "val") %>%
+    mutate(year = substr(lyr, 1, 4)) %>% # pick out year
+    group_by(year) %>%
+    summarise(q = list(quantile(val, c(0.025, 0.5, 0.975)))) %>%
+    unnest_wider(q) %>%
+    ungroup() %>%
+    mutate(year = as.numeric(year))
+}
+
 
 
 

@@ -10,8 +10,7 @@ mod <- args[2]
 message(paste0("Marker: ", marker))
 message(paste0("Model: ", mod))
 
-
-if (!str_detect("lfo", mod)){
+if (!str_detect(mod, "lfo")){
     folds <- read_rds(paste0("output/", marker, "/", mod, "/cv_folds_spat.rds"))
     pred_path = paste0("output/", marker, "/", mod, "/cv_preds/")
     lfo  <- FALSE

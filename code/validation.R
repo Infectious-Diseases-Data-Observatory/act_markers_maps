@@ -43,6 +43,20 @@ cv_folds <- lapply(names(nice_name_lookup_all), function(marker){
   setNames(names(nice_name_lookup_all))
 
 
+# grab LFO-CV preds also - main models only as SNP models were tricky
+mut_dat_assoc_with_preds_lfo <- lapply(names(nice_name_lookup_main),
+                                       function(marker){
+   read.csv(paste0("output/", marker, "/bb_gne/lfo/mut_dat_cv_preds_extracted.csv"))
+}) %>%
+  setNames(names(nice_name_lookup_main))
+
+# this will be in reference to a different number of records compared to 
+#what's in mut_dat_assoc_with_preds_lfo
+# lfo_folds <- lapply(names(nice_name_lookup_main), function(marker){
+#   read_rds(paste0("output/", marker, "/bb_gne/lfo/cv_folds_lfo.rds"))
+# })
+
+
 # baseline predictions: just assign annual marker median
 mut_dat_preds_baseline <- lapply(names(nice_name_lookup_all), function(marker){
   baseline_preds(mut_dat_assoc_with_preds[[marker]])
@@ -50,19 +64,22 @@ mut_dat_preds_baseline <- lapply(names(nice_name_lookup_all), function(marker){
   setNames(names(nice_name_lookup_all))
 # might be prudent to trim regions I'm looking at for SNP models ...need to think further about that
 
+
 # summarise
 rmses <- lapply(mut_dat_assoc_with_preds, function(x){rmse(x)})
 rsq <- lapply(mut_dat_assoc_with_preds, function(x){unadjusted_rsq(x)})
 
 # crack into rsqs for held-out models and add n folds included in mean
 cv_stats <- lapply(names(nice_name_lookup_all), 
-                   function(x){cv_val(mut_dat_assoc_with_preds_cv[[x]], 
-                                      cv_folds[[x]])}) %>%
+                   function(x){cv_val(mut_dat_assoc_with_preds_cv[[x]])}) %>%
   setNames(names(nice_name_lookup_all))
+
+cv_stats_lfo <- lapply(names(nice_name_lookup_main), 
+                   function(x){cv_val(mut_dat_assoc_with_preds_lfo[[x]])}) %>%
+  setNames(names(nice_name_lookup_main))
 
 rmse_baseline <- lapply(mut_dat_preds_baseline, function(x){rmse(x)})
 rsq_baseline <- lapply(mut_dat_preds_baseline, function(x){unadjusted_rsq(x)})
-
 
 cv_summary <- lapply(cv_stats, function(x){
   x[-c(1)] %>% # remove foldwise stats
@@ -70,6 +87,14 @@ cv_summary <- lapply(cv_stats, function(x){
 }) %>%
   do.call(what = rbind) %>%
   mutate(marker = rownames(.))
+
+cv_summary_lfo <- lapply(cv_stats_lfo, function(x){
+  x[-c(1)] %>% # remove foldwise stats
+    as.data.frame()
+}) %>%
+  do.call(what = rbind) %>%
+  mutate(marker = rownames(.)) %>%
+  rename_with(.cols = -c(marker), ~paste0(.x, "_lfo"))
 
 library(xtable)
 dat <- data.frame(mod = unlist(nice_name_lookup_all[names(rmses)]),
@@ -79,25 +104,32 @@ dat <- data.frame(mod = unlist(nice_name_lookup_all[names(rmses)]),
                   rsq = unlist(rsq)) %>%
   mutate(marker = rownames(.)) %>%
   left_join(cv_summary) %>%
+  left_join(cv_summary_lfo) %>%
   left_join(val_table_row_order) %>%
+  mutate(across(matches("rsq|rmse"), ~ sprintf("%.3f", .x))) %>%
+  mutate(across(ends_with("lfo"), ~ ifelse(.x == "NA", "", .x))) %>%
+  mutate(across(starts_with("base"), ~ ifelse(.x == "NA", "*", .x))) %>%
   arrange(ord) %>%
   dplyr::select(-c(marker, ord))
 
-colnames(dat) <- c("", "RMSE", "$r^2$", "RMSE", "$r^2$", "Mean", "SD", "Mean", "SD", "n")
-tab <- xtable(dat, digits = 3)
-align(tab) <- c(rep("c", 2), "|", rep("c", 2), "|", rep("c", 2), "|", rep("c", 5))
+dat
+
+colnames(dat) <- c("", "RMSE", "$r^2$", "RMSE", "$r^2$", "Mean", "SD", "Mean", 
+                   "SD", "n", "Mean", "SD", "Mean", "SD", "n")
+tab <- xtable(dat)
+align(tab) <- c(rep("c", 2), "|", rep("c", 2), "|", rep("c", 2), "|", rep("c", 5),
+                "|", rep("c", 5))
 addtorow <- list()
 addtorow$pos <- list(-1, -1, -1)
-addtorow$command <- c("\\hline & \\multicolumn{2}{c|}{Baseline} & \\multicolumn{6}{c}{Spatiotemporal GP} \\\\\n \\cline{4-9}",
-                      " & & & \\multicolumn{2}{c|}{Full dataset} & \\multicolumn{5}{c}{10-fold holdout} \\\\\n", # \\cline{6-9}
-                      "& & & & & \\multicolumn{2}{c}{RMSE} & \\multicolumn{2}{c}{$r^2$} \\\\\n")
+addtorow$command <- c("\\hline & \\multicolumn{2}{c|}{Baseline} & \\multicolumn{11}{c}{Spatiotemporal GP} \\\\\n \\cline{4-15}",
+                      " & & & \\multicolumn{2}{c|}{Full dataset} & \\multicolumn{5}{c|}{10-fold SS-CV} & \\multicolumn{5}{c}{LFO-CV (2019--2024)} \\\\\n", # \\cline{6-9}
+                      "& & & & & \\multicolumn{2}{c}{RMSE} & \\multicolumn{2}{c}{$r^2$} & & \\multicolumn{2}{c}{RMSE} & \\multicolumn{2}{c}{$r^2$} & \\\\\n")
 print(tab, 
       sanitize.text.function=function(x){x}, 
       include.rownames = FALSE,
       #include.colnames = FALSE,
       hline.after = c(0, 10),
-      add.to.row = addtorow,
-      NA.string = "*")
+      add.to.row = addtorow)
 
 ################################################################################
 # check distribution of observed prevalences and how that varies through blocks ..
