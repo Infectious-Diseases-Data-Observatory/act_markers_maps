@@ -390,34 +390,78 @@ df <- cbind(coords, vals) %>%
                names_to = "lyr",
                values_to = "val") %>%
   mutate(year = substr(lyr, 1, 4),
-         marker = str_extract(lyr, "(?<=_).*"))
+         marker = str_extract(lyr, "(?<=_).*")) %>%
+  mutate(marker = case_when(marker == "mdr1246"~ "Pfmdr1 D1246Y",
+                            marker == "mdr184" ~"Pfmdr1 Y184F",
+                            marker == "mdr86" ~ "Pfmdr1 N86Y",
+                            marker == "crt76" ~ "Pfcrt K76T"),
+         marker = factor(marker,
+                         levels = rev(c("Pfmdr1 D1246Y", "Pfmdr1 Y184F",
+                                        "Pfmdr1 N86Y", "Pfcrt K76T"))))
 
-p <- ggplot(df %>%
-              mutate(marker = case_when(marker == "mdr1246"~ "Pfmdr1 D1246Y",
-                                        marker == "mdr184" ~"Pfmdr1 Y184F",
-                                        marker == "mdr86" ~ "Pfmdr1 N86Y",
-                                        marker == "crt76" ~ "Pfcrt K76T"),
-                     marker = factor(marker,
-                                     levels = rev(c("Pfmdr1 D1246Y", "Pfmdr1 Y184F",
-                                                    "Pfmdr1 N86Y", "Pfcrt K76T"))))) +
-  geom_tile(aes(x = x, y = y, fill = val)) +
-  geom_sf(data = afr, fill = NA, linewidth = 0.1) +
-  facet_grid(year ~ marker) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  scale_fill_gradientn(name = "Estimate SD",
-                       colors = oranges,
-                       breaks = seq(0.05, 0.25, length.out = 3)) + # they got a bit squished so manually setting
-  scale_x_continuous(breaks = seq(-20, 40, 20), "Longitude") +
-  scale_y_continuous(breaks = seq(-20, 40, 20), "Latitude") +
-  theme_bw() +
-  theme(legend.position = "bottom",
-        legend.title = element_text(hjust = 0.5),
-        legend.spacing.x = unit(4, "lines"),
-        panel.spacing = unit(0, "lines")) +
-  guides(fill = guide_colourbar(title.position = "top"),
-         size = guide_legend(title.position = "top"))
-ggsave("figures/crt_mdr_out_bb_sds.png", p, height = 9, width = 6.5)
+
+p1 <- sd_panelled_plot(df, "Pfcrt K76T", lab = "Estimate SD") +
+  theme(strip.text.y = element_blank(),
+        strip.background.y = element_blank(),
+        axis.title.x = element_blank())
+p2 <- sd_panelled_plot(df, "Pfmdr1 N86Y", lab = "Estimate SD") +
+  theme(strip.text.y = element_blank(),
+        strip.background.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank())
+p3 <- sd_panelled_plot(df, "Pfmdr1 Y184F", lab = "Estimate SD") +
+  theme(strip.text.y = element_blank(),
+        strip.background.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank())
+p4 <- sd_panelled_plot(df, "Pfmdr1 D1246Y", lab = "Estimate SD") +
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank())
+
+# p <- ggplot(df %>%
+#               mutate(marker = case_when(marker == "mdr1246"~ "Pfmdr1 D1246Y",
+#                                         marker == "mdr184" ~"Pfmdr1 Y184F",
+#                                         marker == "mdr86" ~ "Pfmdr1 N86Y",
+#                                         marker == "crt76" ~ "Pfcrt K76T"),
+#                      marker = factor(marker,
+#                                      levels = rev(c("Pfmdr1 D1246Y", "Pfmdr1 Y184F",
+#                                                     "Pfmdr1 N86Y", "Pfcrt K76T"))))) +
+#   geom_tile(aes(x = x, y = y, fill = val)) +
+#   geom_sf(data = afr, fill = NA, linewidth = 0.1) +
+#   facet_grid(year ~ marker) +
+#   xlab("Longitude") +
+#   ylab("Latitude") +
+#   scale_fill_gradientn(name = "Estimate SD",
+#                        colors = oranges,
+#                        breaks = seq(0.05, 0.25, length.out = 3)) + # they got a bit squished so manually setting
+#   scale_x_continuous(breaks = seq(-20, 40, 20), "Longitude") +
+#   scale_y_continuous(breaks = seq(-20, 40, 20), "Latitude") +
+#   theme_bw() +
+#   theme(legend.position = "bottom",
+#         legend.title = element_text(hjust = 0.5),
+#         legend.spacing.x = unit(4, "lines"),
+#         panel.spacing = unit(0, "lines")) +
+#   guides(fill = guide_colourbar(title.position = "top"),
+#          size = guide_legend(title.position = "top"))
+# ggsave("figures/crt_mdr_out_bb_sds.png", p, height = 9, width = 6.5)
+
+
+text_patch <- ggplot() + 
+  annotate("text", x = 1, y = 1, label = "Longitude", size = 4, fontface = "plain") +
+  theme_void() +
+  coord_cartesian(clip = "off")
+
+p <- (p1 | p2 | p3 | p4) +
+  inset_element(text_patch, left = -2.5, bottom = -0.05, right = 0, top = 0.05)
+
+
+ggsave("figures/crt_mdr_out_bb_sds.png", p, height = 9.5, width = 7)
 
 
 #########################################################################
@@ -437,34 +481,95 @@ df <- cbind(coords, vals) %>%
                names_to = "lyr",
                values_to = "val") %>%
   mutate(year = substr(lyr, 1, 4),
-         marker = str_extract(lyr, "(?<=_).*"))
+         marker = str_extract(lyr, "(?<=_).*")) %>%
+  mutate(marker = case_when(marker == "mdr1246"~ "Pfmdr1 D1246Y",
+                            marker == "mdr184" ~"Pfmdr1 Y184F",
+                            marker == "mdr86" ~ "Pfmdr1 N86Y",
+                            marker == "crt76" ~ "Pfcrt K76T"),
+         marker = factor(marker,
+                         levels = rev(c("Pfmdr1 D1246Y", "Pfmdr1 Y184F",
+                                        "Pfmdr1 N86Y", "Pfcrt K76T"))))
 
-p <- ggplot(df %>%
-              mutate(marker = case_when(marker == "mdr1246"~ "Pfmdr1 D1246Y",
-                                        marker == "mdr184" ~"Pfmdr1 Y184F",
-                                        marker == "mdr86" ~ "Pfmdr1 N86Y",
-                                        marker == "crt76" ~ "Pfcrt K76T"),
-                     marker = factor(marker,
-                                     levels = rev(c("Pfmdr1 D1246Y", "Pfmdr1 Y184F",
-                                                    "Pfmdr1 N86Y", "Pfcrt K76T"))))) +
-  geom_tile(aes(x = x, y = y, fill = val)) +
-  geom_sf(data = afr, fill = NA, linewidth = 0.1) +
-  facet_grid(year ~ marker) +
-  xlab("Longitude") +
-  ylab("Latitude") +
-  scale_fill_gradientn(name = "Estimate SD (unscaled)",
-                       colors = oranges) + # they got a bit squished so manually setting
-  scale_x_continuous(breaks = seq(-20, 40, 20), "Longitude") +
-  scale_y_continuous(breaks = seq(-20, 40, 20), "Latitude") +
-  theme_bw() +
-  theme(legend.position = "bottom",
-        legend.title = element_text(hjust = 0.5),
-        legend.spacing.x = unit(4, "lines"),
-        panel.spacing = unit(0, "lines")) +
-  guides(fill = guide_colourbar(title.position = "top"),
-         size = guide_legend(title.position = "top"))
-ggsave("figures/crt_mdr_out_bb_sdscaled.png", p, height = 9, width = 6.5)
+sd_panelled_plot <- function(df, mark, lab = "Estimate SD\n(unscaled)"){
+  # giving each model its own colour bar: split out into separate plots
+  # and plot_grid back together
+  ggplot(df %>%
+           filter(marker == mark)) +
+    geom_tile(aes(x = x, y = y, fill = val)) +
+    geom_sf(data = afr, fill = NA, linewidth = 0.1) +
+    facet_grid(year ~ marker) +
+    xlab("Longitude") +
+    ylab("Latitude") +
+    scale_fill_gradientn(name = lab,
+                         colors = oranges) + # they got a bit squished so manually setting
+    scale_x_continuous(breaks = seq(-20, 40, 20), "Longitude") +
+    scale_y_continuous(breaks = seq(-20, 40, 20), "Latitude") +
+    theme_bw() +
+    theme(legend.position = "bottom",
+          legend.title = element_text(hjust = 0.5),
+          legend.spacing.x = unit(4, "lines"),
+          panel.spacing = unit(0, "lines")) +
+    guides(fill = guide_colourbar(title.position = "top"),
+           size = guide_legend(title.position = "top"))
+}
 
+p1 <- sd_panelled_plot(df, "Pfcrt K76T") +
+  theme(strip.text.y = element_blank(),
+        strip.background.y = element_blank(),
+        axis.title.x = element_blank())
+p2 <- sd_panelled_plot(df, "Pfmdr1 N86Y") +
+  theme(strip.text.y = element_blank(),
+        strip.background.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank())
+p3 <- sd_panelled_plot(df, "Pfmdr1 Y184F") +
+  theme(strip.text.y = element_blank(),
+        strip.background.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank())
+p4 <- sd_panelled_plot(df, "Pfmdr1 D1246Y") +
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank())
+
+# p <- ggplot(df) +
+#   geom_tile(aes(x = x, y = y, fill = val)) +
+#   geom_sf(data = afr, fill = NA, linewidth = 0.1) +
+#   facet_grid(year ~ marker) +
+#   xlab("Longitude") +
+#   ylab("Latitude") +
+#   scale_fill_gradientn(name = "Estimate SD (unscaled)",
+#                        colors = oranges) + # they got a bit squished so manually setting
+#   scale_x_continuous(breaks = seq(-20, 40, 20), "Longitude") +
+#   scale_y_continuous(breaks = seq(-20, 40, 20), "Latitude") +
+#   theme_bw() +
+#   theme(legend.position = "bottom",
+#         legend.title = element_text(hjust = 0.5),
+#         legend.spacing.x = unit(4, "lines"),
+#         panel.spacing = unit(0, "lines")) +
+#   guides(fill = guide_colourbar(title.position = "top"),
+#          size = guide_legend(title.position = "top"))
+
+# p <- plot_grid(p1, p2, p3, p4, nrow = 1, align = "v")
+               #rel_widths = c(1.4, 1, 1, 1.2))
+
+library(patchwork)
+
+text_patch <- ggplot() + 
+  annotate("text", x = 1, y = 1, label = "Longitude", size = 4, fontface = "plain") +
+  theme_void() +
+  coord_cartesian(clip = "off")
+
+p <- (p1 | p2 | p3 | p4) +
+  inset_element(text_patch, left = -2.5, bottom = -0.05, right = 0, top = 0.05)
+
+
+ggsave("figures/crt_mdr_out_bb_sdscaled.png", p, height = 9.5, width = 7)
 
 # p1 <- map_pred_row("output/crt76/bb_gne/preds_medians.tif",
 #                    exte = afr,
