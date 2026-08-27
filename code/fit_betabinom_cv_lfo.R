@@ -84,9 +84,23 @@ if (is.na(fold)){
   )
 }
 
+# this is definitely overengineering things
+foldvec <- rep(NA, nrow(mut_data))
+for (x in 2:length(folds)){
+  tmp <- setdiff(folds[[x]], folds[[x - 1]])
+  foldvec[tmp] <- x - 1
+}
+foldvec
 
+mut_data <- mutate(mut_data,
+                   fold = as.factor(ifelse(is.na(foldvec), "Train only", foldvec)))
 
+p <- ggplot() +
+  geom_sf(data = afr, fill = NA) +
+  geom_point(data = mut_data, aes(col = fold, x = x, y = y), alpha = 0.5) +
+  scale_color_discrete("Fold") +
+  theme(axis.title = element_blank())
 
-
+ggsave("figures/lfo_blocks_eg.png", p, height = 7, width = 7.5)
 
 

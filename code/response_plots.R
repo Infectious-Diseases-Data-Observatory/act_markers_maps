@@ -67,7 +67,7 @@ response_plots_runup <- function(ras){
 #'
 #' @examples
 response_plot <- function(df, dat = NULL, covar = "pfpr", xax_breaks = 100,
-                          pred_pal = iddoPal::iddo_palettes$soft_blues,
+                          pred_pal = as.vector(iddoPal::iddo_palettes$soft_blues),
                           title = ""){
   # summarise distribution of all median preds against all covar vals
   # for each value in pfpr, find median and 95% quantile
@@ -131,6 +131,7 @@ library(terra)
 
 source("code/setup.R")
 source("code/build_design_matrix.R")
+source("code/validation_funcs.R")
 
 pfpr_unscaled <- rast("data/pfpr_rasters_afr_2025.tif")
 names(pfpr_unscaled) <- paste0("pfpr_", years)
@@ -140,11 +141,13 @@ mut_dat_assoc_with_preds <- lapply(names(nice_name_lookup_all), function(marker)
   extract_preds(data_path = data_path_lookup[[marker]],
                       pred_path = paste0(bb_paths[[marker]], "preds_medians.tif"),
                       buffer = BUFFER) %>%
-    extract_pfpr(covs = covariates)
+    extract_pfpr(covs = pfpr_unscaled)
   
 }) %>%
   setNames(names(nice_name_lookup_all)) %>%
   suppressMessages()
+
+hist(mut_dat_assoc_with_preds$k13_marcse$pfpr)
 
 titlelst <- list(k13_marcse = "(a) Kelch 13", 
                  crt76 = "(b) Pfcrt K76T", 
@@ -154,7 +157,7 @@ titlelst <- list(k13_marcse = "(a) Kelch 13",
 
 plotlst <- lapply(names(nice_name_lookup_main), function(marker){
   # preds <- rast(paste0("output/", marker,"/bb_gne/preds_medians.tif"))
-  # ras <- c(preds, covariates) %>%
+  # ras <- c(preds, pfpr_unscaled) %>%
   #   aggregate(fact = 5) # let's just make this a little more manageable
   # response_plot_runup <- response_plots_runup(ras)
   # write.csv(response_plot_runup,
@@ -167,6 +170,8 @@ plotlst <- lapply(names(nice_name_lookup_main), function(marker){
                 xax_breaks = 100,
                 title = titlelst[[marker]])
 })
+
+library(patchwork)
 
 plotlst[[1]] + plotlst[[2]] + plotlst[[3]] + plotlst[[4]] + plotlst[[5]] +
   plot_layout(ncol = 1, guides = "collect", axis_title = "collect")

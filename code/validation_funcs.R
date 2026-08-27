@@ -189,7 +189,8 @@ cv_val <- function(mut_data){
        rmse_sd = sd(out$rmse),
        rsq_mean = mean(out$rsq, na.rm = TRUE),
        rsq_sd = sd(out$rsq, na.rm = TRUE),
-       n = ifelse(is.na(mean(out$rsq)), sum(!is.na(out$rsq)), ""))
+       # n = ifelse(is.na(mean(out$rsq)), sum(!is.na(out$rsq)), ""))
+       n = sum(!is.na(out$rsq)))
 }
 
 
