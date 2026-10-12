@@ -91,8 +91,6 @@ pfpr <- rast("data/pfpr_rasters_afr_2025.tif") %>%
   scale()
 names(pfpr) <- paste0("pfpr_", years)
 
-covariates <- pfpr # now standardised
-
 setup_mut_data <- function(path, min_year = NULL, buffer = 0){
   
   # read in and format data for a single response (k13, crt76, mdr1-86, ...)

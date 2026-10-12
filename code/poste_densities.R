@@ -2,7 +2,9 @@
 # draws <- read_rds("output/k13snp_C469Y/bb_gne/draws.rds")
 # mcmc_hist(draws)
 library(cowplot)
+source("code/setup.R")
 
+EARTH_RADIUS <- 6371
 kelch_pal <- c("#14B1E7", viridis(5))
 partner_pal <- c("#c7047c", "#7ECE7E", "#174D97", "#E37210")
 
@@ -35,7 +37,8 @@ alldraws <- lapply(names(nice_name_lookup_all), function(marker){
     do.call(what = rbind) %>% 
     as.data.frame() %>%
     rename_with(~ unlist(parameter_lookup), all_of(names(parameter_lookup))) %>%
-    mutate(marker = nice_name_lookup_all[[marker]])
+    mutate(marker = nice_name_lookup_all[[marker]],
+           Lengthscale = Lengthscale * EARTH_RADIUS) # radius of earth in km
 }) %>%
   do.call(what = bind_rows) %>%
   pivot_longer(cols = -c(marker), names_to = "var", values_to = "val") %>%
@@ -43,7 +46,7 @@ alldraws <- lapply(names(nice_name_lookup_all), function(marker){
 
 set.seed(13517)
 
-priors <- list(gneiting_len = sort(rnorm(4000, sd = 3)),
+priors <- list(gneiting_len = sort(rnorm(4000, sd = 3)) * EARTH_RADIUS,
                gneiting_tim = sort(rnorm(4000, sd = 3)),
                gneiting_sd = sort(rnorm(4000, sd = 3)),
                white_sd = sort(rnorm(4000, sd = 3)),
@@ -78,7 +81,8 @@ by_panel_x <- list(
   scale_x_continuous(limits = c(-2, 4)),
   scale_x_continuous(limits = c(-4, 4)),
   scale_x_continuous(limits = c(0, 10)),
-  scale_x_continuous(limits = c(0, 1.75)),
+  # scale_x_continuous(limits = c(0, 1.75)),
+  scale_x_continuous(limits = c(0, 7000)),
   scale_x_continuous(limits = c(0, 0.4)),
   scale_x_continuous(limits = c(0, 7)),
   scale_x_continuous(limits = c(0, 3.5))
@@ -112,7 +116,8 @@ by_panel_x <- list(
   scale_x_continuous(limits = c(-2, 2)),
   scale_x_continuous(limits = c(-4, 5)),
   scale_x_continuous(limits = c(0, 10)),
-  scale_x_continuous(limits = c(0, 1.5)),
+  # scale_x_continuous(limits = c(0, 1.5)),
+  scale_x_continuous(limits = c(0, 7000)),
   scale_x_continuous(limits = c(0, 0.4)),
   scale_x_continuous(limits = c(0, 7)),
   scale_x_continuous(limits = c(0, 3.5))

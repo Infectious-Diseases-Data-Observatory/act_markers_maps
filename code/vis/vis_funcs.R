@@ -100,7 +100,7 @@ pred_time_plot <- function(path,
     # make this take 100 times longer to run :/
     aggregate(fact = agg_fact, fun = "mean", na.rm = TRUE)
   
-  if (!is.null(mask)){
+  if (!is.null(mask_shp)){
     preds <- mask(preds, mask_shp)
   }
   
@@ -149,7 +149,7 @@ pred_time_plot <- function(path,
     geom_ribbon(aes(x = year, ymin = `50%`, ymax = `50%`, fill = "50%")) + #fill=pal[1]) +
     geom_line(aes(x = year, y = `50%`), col = pal[1], linewidth = 1) +
     # scale_linetype_manual("", values = c("0% - 100%" = 2)) +
-    scale_fill_manual("", values = c("2.5% - 97.5%" = pal[6], "25% - 75%" = pal[4], "50%" = pal[1])) +
+    scale_fill_manual("Quantiles", values = c("2.5% - 97.5%" = pal[6], "25% - 75%" = pal[4], "50%" = pal[1])) +
     ylab(ylab) +
     xlab("Year") +
     labs(title = title) +
@@ -438,10 +438,14 @@ pred_time_factoring_incidence <- function(path,
                  df %>% filter(year == 2000) %>% dplyr::select(upper), ")"))
   
   p <- ggplot(df) +
-    geom_ribbon(aes(x = year, ymin = lower, ymax = upper, fill = "2.5% - 97.5%"), alpha = alpha) +
-    geom_ribbon(aes(x = year, ymin = med, ymax = med, fill = "50%")) +
+    geom_ribbon(aes(x = year, ymin = lower, ymax = upper, fill = "95% credible interval"), alpha = alpha) +
+    geom_ribbon(aes(x = year, ymin = med, ymax = med, fill = "Posterior median")) +
     geom_line(aes(x = year, y = med), linewidth = 1, col = pal[1]) +
-    scale_fill_manual("", values = c("2.5% - 97.5%" = pal[4], "50%" = pal[1])) +
+    # scale_fill_manual("", 
+    #                   values = c("2.5% - 97.5%" = pal[4], "50%" = pal[1])) +
+    scale_fill_manual("",
+                      values = c("95% credible interval" = pal[4], 
+                                 "Posterior median" = pal[1])) +
     theme_bw() +
     xlab("Year") +
     labs(title = title) +
